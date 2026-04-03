@@ -367,6 +367,16 @@ def update_prices(rec: dict) -> dict:
                 rec["ret_close"] = round((rec["dec_close"] - rec["next_open"]) / rec["next_open"] * 100, 2)
             print(f"  {rec['name']}: 騰落率(始){rec.get('ret_open')}% 騰落率(終){rec.get('ret_close')}%")
 
+    # 受渡日 → 寄り・大引け・騰落率（A=受渡始値, B=受渡終値, C=B÷A）
+    del_date = rec.get("delivery_date") or rec.get("delivery_estimated")
+    if del_date and del_date in prices and not rec.get("delivery_open"):
+        p = prices[del_date]
+        if p["open"] and p["close"]:
+            rec["delivery_open"]  = p["open"]
+            rec["delivery_close"] = p["close"]
+            rec["delivery_ret"]   = round((p["close"] - p["open"]) / p["open"] * 100, 2)
+            print(f"  {rec['name']}: 受渡日 始値={p['open']:,} 終値={p['close']:,} 騰落率={rec['delivery_ret']}%")
+
     rec["status"] = ("complete" if rec.get("dec_open") and rec.get("dec_close")
                      else "nextday" if rec.get("next_open")
                      else "pending")
@@ -449,6 +459,9 @@ def main():
             "dec_close":          None,
             "ret_open":           None,
             "ret_close":          None,
+            "delivery_open":      None,   # 受渡日の寄り価格（A）
+            "delivery_close":     None,   # 受渡日の大引け価格（B）
+            "delivery_ret":       None,   # 受渡日騰落率（C=B÷A）
             "memo":               "",
             "status":             "pending",
         }
