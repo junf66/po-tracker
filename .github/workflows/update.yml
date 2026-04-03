@@ -1,0 +1,41 @@
+name: PO Auto Tracker
+
+on:
+  schedule:
+    - cron: "30 0 * * 1-5"
+    - cron: "30 7 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run PO scraper
+        env:
+          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_NOTIFY_TOKEN }}
+        run: python scripts/po_scraper.py
+
+      - name: Commit updated data
+        run: |
+          git config user.name  "po-tracker-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/
+          git diff --staged --quiet && echo "変更なし" || (
+            git commit -m "Auto-update PO data $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          )
