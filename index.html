@@ -58,7 +58,7 @@ tr:hover td{background:#0e1525}
 .nr-card{background:#131a2e;border:1px solid #1e2d4d;border-radius:10px;padding:12px 16px}
 .nr-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
 .nr-name{font-weight:500}
-.nr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 12px;;font-size:11px;color:#64748b}
+.nr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 12px;font-size:11px;color:#64748b}
 .nr-val{color:#e2e8f0;font-family:'JetBrains Mono',monospace;font-size:12px}
 .empty{color:#334155;text-align:center;padding:32px;font-size:13px}
 /* scrollbar */
@@ -281,7 +281,7 @@ function renderNewPanel(){
         <div><div style="color:#64748b;font-size:10px">PO規模(億)</div><div class="nr-val">${r.po_scale||"–"}</div></div>
         <div><div style="color:#64748b;font-size:10px">翌日始値</div><div class="nr-val">${r.next_open||"–"}</div></div>
         <div><div style="color:#64748b;font-size:10px">騰落率(始)</div><div class="nr-val ${r.ret_open!=null?col(r.ret_open):""}">${r.ret_open!=null?fmt(r.ret_open):"–"}</div></div>
-        <div><div style="color:#64748b;font-size:10px">騰落率(終)</div><div class="nr-val ${r.ret_close!=null?col(r.ret_close):""}">${r.ret_close!=null?fmt(r.ret_close):"–"}
+        <div><div style="color:#64748b;font-size:10px">騰落率(終)</div><div class="nr-val ${r.ret_close!=null?col(r.ret_close):""}">${r.ret_close!=null?fmt(r.ret_close):"–"}</div></div>
         <div><div style="color:#64748b;font-size:10px">受渡始値(A)</div><div class="nr-val">${r.delivery_open?r.delivery_open.toLocaleString():"–"}</div></div>
         <div><div style="color:#64748b;font-size:10px">受渡終値(B)</div><div class="nr-val">${r.delivery_close?r.delivery_close.toLocaleString():"–"}</div></div>
         <div><div style="color:#64748b;font-size:10px">受渡騰落(C)</div><div class="nr-val ${r.delivery_ret!=null?col(r.delivery_ret):""}">${r.delivery_ret!=null?fmt(r.delivery_ret):"–"}</div></div>
