@@ -262,6 +262,34 @@ def scrape_article(url: str) -> dict:
     if _treasury_shares > 0: info["treasury_shares"] = _treasury_shares
     if _oa_shares       > 0: info["oa_shares"]       = _oa_shares
 
+    # ── 幹事テーブルを取得 ────────────────────────────────────────────────
+    # pokabu.net 個別記事の「幹事」セクション:
+    #   | 主幹事 | 野村證券 |
+    #   | 引受人 | 大和証券 |  など
+    lead_managers  = []   # 主幹事
+    co_managers    = []   # 引受人
+
+    for table in soup.find_all("table"):
+        header_text = table.get_text(" ", strip=True)
+        # 幹事テーブルかどうかを判定（「主幹事」または「証券会社」という文字が含まれる）
+        if "主幹事" not in header_text and "証券会社" not in header_text:
+            continue
+        for row in table.find_all("tr"):
+            cells = row.find_all(["th", "td"])
+            if len(cells) < 2:
+                continue
+            role = cells[0].get_text(strip=True)
+            name = cells[1].get_text(strip=True)
+            if not name or name in ("証券会社名", ""):
+                continue
+            if "主幹事" in role:
+                lead_managers.append(name)
+            elif any(k in role for k in ["引受", "委託", "副幹事"]):
+                co_managers.append(name)
+
+    if lead_managers: info["lead_managers"] = lead_managers
+    if co_managers:   info["co_managers"]   = co_managers
+
     return info
 
 
@@ -479,6 +507,8 @@ def main():
             "sold_shares":        article.get("sold_shares"),        # 売出し数（OA含む）
             "oa_shares":          article.get("oa_shares"),          # うちOA分
             "shares_outstanding": None,                              # 発行済み株式数（Yahoo Finance）
+            "lead_managers":      article.get("lead_managers", []),    # 主幹事リスト
+            "co_managers":        article.get("co_managers",   []),    # 引受人リスト
             "article_url":        si.get("article_url"),
             "po_pct":             None,   # PO規模割合（自動計算）
             "dilution":           None,   # 希薄化率（自動計算）

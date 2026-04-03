@@ -112,6 +112,7 @@ tr:hover td{background:#0e1525}
         <th>種類</th><th>注意</th>
         <th class="num" onclick="sort(4)">PO規模(億)</th>
         <th class="num" onclick="sort(5)">規模割合</th>
+        <th class="num" onclick="sort(11)">希薄化率</th>
         <th class="num" onclick="sort(6)">騰落率(始)</th>
         <th class="num" onclick="sort(7)">騰落率(終)</th>
         <th class="num" onclick="sort(8)">受渡始値(A)</th>
@@ -140,7 +141,7 @@ const HIST=[
 ];
 
 /* ─────── 状態 ────────────────────────────────────────────────────────────── */
-let newRecs=[], combined=[], filt=[], sCol=-1, sAsc=true;
+let newRecs=[], combined=[], filt=[], sCol=0, sAsc=false;
 let cY, cD;
 
 /* ─────── データ読み込み ──────────────────────────────────────────────────── */
@@ -161,7 +162,7 @@ async function loadNewRecs(){
 
 function buildCombined(){
   const hist = HIST.map(h=>({src:"hist",year:h[0],name:h[1],type:h[2],alert:h[3],scale:h[4],pct:h[5],retOpen:h[6],retClose:h[7]}));
-  const nw   = newRecs.map(r=>({src:"new",year:r.year||new Date().getFullYear(),name:r.name,type:r.type,alert:r.alert||"",scale:r.po_scale,pct:r.po_pct,retOpen:r.ret_open,retClose:r.ret_close,delOpen:r.delivery_open,delClose:r.delivery_close,delRet:r.delivery_ret}));
+  const nw   = newRecs.map(r=>({src:"new",year:r.year||new Date().getFullYear(),name:r.name,type:r.type,alert:r.alert||"",scale:r.po_scale,pct:r.po_pct,dilution:r.dilution,retOpen:r.ret_open,retClose:r.ret_close,delOpen:r.delivery_open,delClose:r.delivery_close,delRet:r.delivery_ret,leadManagers:r.lead_managers||[],coManagers:r.co_managers||[]}));
   combined   = [...hist,...nw];
 }
 
@@ -239,6 +240,7 @@ function renderTable(data){
     <td>${r.alert?`<span class="b ${r.alert==="注意"?"b-c":"b-ban"}">${r.alert}</span>`:""}</td>
     <td class="num">${r.scale?r.scale.toLocaleString():"–"}</td>
     <td class="num">${r.pct?r.pct.toFixed(1)+"%":"–"}</td>
+    <td class="num">${r.dilution!=null?r.dilution.toFixed(1)+"%":"–"}</td>
     <td class="num">${fmtCell(r.retOpen)}</td>
     <td class="num">${fmtCell(r.retClose)}</td>
     <td class="num">${r.delOpen?r.delOpen.toLocaleString():"–"}</td>
@@ -249,7 +251,7 @@ function renderTable(data){
 
 function sort(col){
   if(sCol===col) sAsc=!sAsc; else{sCol=col;sAsc=true;}
-  const keys=["year","name","type","alert","scale","pct","retOpen","retClose","delOpen","delClose","delRet"];
+  const keys=["year","name","type","alert","scale","pct","retOpen","retClose","delOpen","delClose","delRet","dilution"];
   filt.sort((a,b)=>{
     const va=a[keys[col]],vb=b[keys[col]];
     if(va==null) return 1; if(vb==null) return -1;
@@ -279,12 +281,15 @@ function renderNewPanel(){
       <div class="nr-grid">
         <div><div style="color:#64748b;font-size:10px">時価総額(億)</div><div class="nr-val">${r.market_cap||"–"}</div></div>
         <div><div style="color:#64748b;font-size:10px">PO規模(億)</div><div class="nr-val">${r.po_scale||"–"}</div></div>
-        <div><div style="color:#64748b;font-size:10px">翌日始値</div><div class="nr-val">${r.next_open||"–"}</div></div>
+        <div><div style="color:#64748b;font-size:10px">希薄化率</div><div class="nr-val">${r.dilution!=null?r.dilution.toFixed(1)+"%":"–"}</div></div>
+        <div><div style="color:#64748b;font-size:10px">翌日始値</div><div class="nr-val">${r.next_open?r.next_open.toLocaleString():"–"}</div></div>
         <div><div style="color:#64748b;font-size:10px">騰落率(始)</div><div class="nr-val ${r.ret_open!=null?col(r.ret_open):""}">${r.ret_open!=null?fmt(r.ret_open):"–"}</div></div>
         <div><div style="color:#64748b;font-size:10px">騰落率(終)</div><div class="nr-val ${r.ret_close!=null?col(r.ret_close):""}">${r.ret_close!=null?fmt(r.ret_close):"–"}</div></div>
         <div><div style="color:#64748b;font-size:10px">受渡始値(A)</div><div class="nr-val">${r.delivery_open?r.delivery_open.toLocaleString():"–"}</div></div>
         <div><div style="color:#64748b;font-size:10px">受渡終値(B)</div><div class="nr-val">${r.delivery_close?r.delivery_close.toLocaleString():"–"}</div></div>
         <div><div style="color:#64748b;font-size:10px">受渡騰落(C)</div><div class="nr-val ${r.delivery_ret!=null?col(r.delivery_ret):""}">${r.delivery_ret!=null?fmt(r.delivery_ret):"–"}</div></div>
+        <div style="grid-column:1/-1;margin-top:4px"><div style="color:#64748b;font-size:10px">主幹事</div><div class="nr-val" style="font-size:11px;white-space:normal">${r.leadManagers&&r.leadManagers.length?r.leadManagers.join(" / "):"–"}</div></div>
+        <div style="grid-column:1/-1"><div style="color:#64748b;font-size:10px">引受人</div><div class="nr-val" style="font-size:11px;white-space:normal">${r.coManagers&&r.coManagers.length?r.coManagers.join(" / "):"–"}</div></div>
       </div>
     </div>`).join("");
 }
