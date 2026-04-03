@@ -40,6 +40,16 @@ def next_biz_day(d: date) -> date:
         nd += timedelta(days=1)
     return nd
 
+def prev_biz_days(d: date, n: int) -> date:
+    """n営業日前の日付を返す（祝日は考慮しない）"""
+    result = d
+    count  = 0
+    while count < n:
+        result -= timedelta(days=1)
+        if result.weekday() < 5:
+            count += 1
+    return result
+
 def parse_jp_date(text: str, year: int = None) -> str | None:
     """'4月6日' '4月6日(月)' → 'YYYY-MM-DD'"""
     if not year:
@@ -354,6 +364,26 @@ def update_prices(rec: dict) -> dict:
         if max_p:
             rec["max_price"]   = max_p
             rec["open_to_max"] = round((max_p - rec["next_open"]) / rec["next_open"] * 100, 2)
+
+    # 受渡日が確定している場合は逆算で決定日を上書き（受渡日の3営業日前）
+    # → pokabu.netの「初日推定」より正確な決定日になる
+    confirmed_del = rec.get("delivery_date")  # scheduleの受渡日テーブルから取得した確定値
+    if confirmed_del and not rec.get("decision_date_confirmed"):
+        try:
+            del_d    = datetime.fromisoformat(confirmed_del).date()
+            calc_dec = prev_biz_days(del_d, 3)
+            calc_dec_str = calc_dec.isoformat()
+            if rec.get("decision_date") != calc_dec_str:
+                print(f"  {rec['name']}: 決定日を受渡日逆算で修正 {rec.get('decision_date')} → {calc_dec_str}")
+                rec["decision_date"]           = calc_dec_str
+                rec["decision_date_confirmed"] = True
+                # 修正に伴い既存の価格データをリセットして再取得
+                rec["dec_open"]  = None
+                rec["dec_close"] = None
+                rec["ret_open"]  = None
+                rec["ret_close"] = None
+        except Exception as e:
+            print(f"  決定日逆算エラー: {e}")
 
     # 決定日 → 騰落率計算
     dec_date = rec.get("decision_date")
